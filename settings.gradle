@@ -1,0 +1,9 @@
+rootProject.name = 'cdrsystem'
+
+include 'commondb'
+include 'common'
+include 'crm'
+include 'cdr'
+include 'brt'
+include 'hrs'
+

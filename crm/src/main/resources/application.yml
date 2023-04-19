@@ -1,0 +1,30 @@
+server:
+  error:
+    include-message: always
+  port: 3000
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          batch_size: 50
+    open-in-view: false
+  datasource:
+    url: jdbc:postgresql://localhost/cdrsystem
+    username: postgres
+    password: 123456
+
+common:
+  security:
+    jwt-secret-key: "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970"
+    jwt-token-duration: 9999999999 #in ms
+
+settings:
+  url:
+    brt-address: "http://localhost:3002/api/v1/brt/"
+    hrs-address: "http://localhost:3001/api/v1/hrs/"

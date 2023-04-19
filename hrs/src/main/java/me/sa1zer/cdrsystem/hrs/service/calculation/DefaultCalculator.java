@@ -1,0 +1,68 @@
+package me.sa1zer.cdrsystem.hrs.service.calculation;
+
+import me.sa1zer.cdrsystem.common.object.enums.CallType;
+import me.sa1zer.cdrsystem.common.object.enums.TariffType;
+import me.sa1zer.cdrsystem.common.payload.dto.CdrPlusDto;
+import me.sa1zer.cdrsystem.common.payload.dto.ReportDto;
+import org.springframework.stereotype.Service;
+
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+public class DefaultCalculator implements BaseCalculator {
+
+    private static final double INCOMING_PRICE = 0;
+    private static final double OUTGOING_PRICE = 0.5D; //first 100 min
+    private static final double PER_MINUTE_PRICE = 1.5D; //after 100 min
+    private static final int FREE_MINUTES = 100;
+
+    @Override
+    public List<ReportDto> getReportData(List<CdrPlusDto> cdrPlusList) {
+        List<ReportDto> reportList = new ArrayList<>();
+
+        long freeMinutes = FREE_MINUTES;
+        long totalMins = 0;
+        for(CdrPlusDto cdrPlusDto : cdrPlusList) {
+            double price = 0;
+
+            long usePerMinutePrice = 0;
+
+            long duration = cdrPlusDto.startTime().until(cdrPlusDto.endTime(), ChronoUnit.SECONDS);
+            double durationMin = Math.ceil(duration / 60D);
+
+            if(cdrPlusDto.callType() == CallType.OUTGOING) {
+                if (freeMinutes - durationMin < 0) { //if freeMins is empty
+                    usePerMinutePrice = (long) (freeMinutes - durationMin);
+
+                    if (freeMinutes > 0) {
+                        price = (usePerMinutePrice + durationMin) * OUTGOING_PRICE +
+                                Math.abs(usePerMinutePrice) * PER_MINUTE_PRICE;
+                    } else
+                        price = Math.abs(usePerMinutePrice) * PER_MINUTE_PRICE;
+                } else price = durationMin * OUTGOING_PRICE;
+            } else price = INCOMING_PRICE;
+
+            freeMinutes-=durationMin;
+
+            if(freeMinutes < 0)
+                freeMinutes = 0;
+
+            reportList.add(new ReportDto(cdrPlusDto.phoneNumber(), cdrPlusDto.startTime(),
+                    cdrPlusDto.endTime(), cdrPlusDto.callType(), cdrPlusDto.tariffType(), price, duration));
+        }
+
+        return reportList;
+    }
+
+    @Override
+    public double calculate(List<ReportDto> reportData) {
+        return reportData.stream().mapToDouble(ReportDto::cost).sum();
+    }
+
+    @Override
+    public TariffType getType() {
+        return TariffType.DEFAULT;
+    }
+}
