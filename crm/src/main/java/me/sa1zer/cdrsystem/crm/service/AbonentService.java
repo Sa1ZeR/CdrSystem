@@ -52,13 +52,6 @@ public class AbonentService {
     private String userUpdateTopic;
     @Transactional
     public ResponseEntity<?> payMoney(PayRequest request) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User user = userService.getUserByPhone(authentication.getName());
-
-        if(!request.numberPhone().equals(user.getPhone()) && !user.getRoles().contains(UserRole.MANAGER))
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    "You are don't have permissions to pay another phone number");
-
         User searched = userService.getUserByPhone(request.numberPhone());
         searched.setBalance(searched.getBalance() + request.money());
 
@@ -77,7 +70,7 @@ public class AbonentService {
         response.setMoney(payment.getAmount());
 
         //send message to kafka for update user data
-        kafkaSender.sendMessage(userUpdateTopic, user.getPhone());
+        kafkaSender.sendMessage(userUpdateTopic, searched.getPhone());
 
         return ResponseEntity.ok(response);
     }
