@@ -3,10 +3,7 @@ package me.sa1zer.cdrsystem.brt.service;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import me.sa1zer.cdrsystem.brt.payload.mapper.BillingMapper;
-import me.sa1zer.cdrsystem.brt.payload.mapper.OperatorMapper;
-import me.sa1zer.cdrsystem.brt.payload.mapper.ReportDataMapper;
-import me.sa1zer.cdrsystem.brt.payload.mapper.UserMapper;
+import me.sa1zer.cdrsystem.brt.payload.mapper.*;
 import me.sa1zer.cdrsystem.common.payload.dto.*;
 import me.sa1zer.cdrsystem.common.payload.request.ReportUpdateDataRequest;
 import me.sa1zer.cdrsystem.common.payload.response.BillingResponse;
@@ -23,7 +20,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -40,6 +36,7 @@ public class BRTService {
     private final UserService userService;
     private final OperatorService operatorService;
     private final ReportDataMapper reportDataMapper;
+    private final ReportDtoMapper reportDtoMapper;
     private final UserMapper userMapper;
     private final BillingMapper billingMapper;
     private final OperatorMapper operatorMapper;
@@ -53,6 +50,7 @@ public class BRTService {
     @PostConstruct
     public void initService() {
         //updateCDRPlus(false);
+        initReportCache();
     }
 
     @Transactional
@@ -173,6 +171,8 @@ public class BRTService {
             updateTotalPrice(d.phone(), d.totalPrice()); //update cache
             updated.add(d.phone());
 
+            REPORT_DATA_CACHE.put(d.phone(), d.reports()); //update cache
+
             reportsToSave.add(addBillingData(d.phone(), d.reports(), d.totalPrice()));
         });
 
@@ -187,6 +187,15 @@ public class BRTService {
     /*  update user in cache*/
     public void updateUserCache(String phoneNumber) {
         userService.updateUserCache(phoneNumber);
+    }
+
+    private void initReportCache() {
+        List<BillingData> data = billingDataService.findAll();
+        data.forEach(d -> {
+            TOTAL_COST_CACHE.put(d.getUser().getPhone(), d.getTotalCost());
+            List<ReportDto> dtoList = d.getReportData().stream().map(reportDtoMapper::map).collect(Collectors.toList());
+            REPORT_DATA_CACHE.put(d.getUser().getPhone(), dtoList);
+        });
     }
 
     public List<OperatorDto> getAllOperators() {
