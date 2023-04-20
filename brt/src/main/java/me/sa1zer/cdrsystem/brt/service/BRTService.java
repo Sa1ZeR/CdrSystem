@@ -9,6 +9,7 @@ import me.sa1zer.cdrsystem.common.payload.request.ReportUpdateDataRequest;
 import me.sa1zer.cdrsystem.common.payload.response.BillingResponse;
 import me.sa1zer.cdrsystem.common.payload.response.CdrResponse;
 import me.sa1zer.cdrsystem.common.service.HttpService;
+import me.sa1zer.cdrsystem.common.service.KafkaSender;
 import me.sa1zer.cdrsystem.commondb.entity.BillingData;
 import me.sa1zer.cdrsystem.commondb.entity.ReportData;
 import me.sa1zer.cdrsystem.commondb.entity.User;
@@ -43,9 +44,13 @@ public class BRTService {
     private final BillingDataService billingDataService;
 
     private final HttpService httpService;
+    private final KafkaSender kafkaSender;
 
     @Value("${settings.url.cdr-address}")
     private String cdrAddress;
+
+    @Value("${settings.broker.topic.user-update-topic}")
+    private String userUpdateTopic;
 
     @PostConstruct
     public void initService() {
@@ -172,6 +177,8 @@ public class BRTService {
             updated.add(d.phone());
 
             REPORT_DATA_CACHE.put(d.phone(), d.reports()); //update cache
+
+            kafkaSender.sendMessage(userUpdateTopic, d.phone()); //update user cache
 
             reportsToSave.add(addBillingData(d.phone(), d.reports(), d.totalPrice()));
         });
