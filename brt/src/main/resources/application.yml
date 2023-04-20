@@ -3,8 +3,14 @@ server:
 settings:
   url:
     cdr-address: "http://localhost:3003/api/v1/cdr/"
+  broker:
+    topic:
+      user-update-topic: "t.user.update"
 
 spring:
+  kafka:
+    consumer:
+      group-id: "default"
   jpa:
     hibernate:
       ddl-auto: validate

@@ -35,8 +35,6 @@ public class BRTService {
     private static final Map<String, List<ReportDto>> REPORT_DATA_CACHE = new HashMap<>();
     private static final Map<String, Double> TOTAL_COST_CACHE = new HashMap<>();
 
-    //todo users (balance) cache
-
     private final UserService userService;
     private final ReportDataMapper reportDataMapper;
     private final UserMapper userMapper;
@@ -79,7 +77,7 @@ public class BRTService {
     }
 
     private BillingData addBillingData(String phone, List<ReportDto> reportList, double totalPrice) {
-        User user = userService.findUserByPhone(phone);
+        User user = userService.getUserByPhone(phone);
 
         Set<ReportData> reportDataList = reportList.stream().map(reportDataMapper::map).collect(Collectors.toSet());
 
@@ -179,5 +177,10 @@ public class BRTService {
                 .collect(Collectors.toList());
 
         return new BillingResponse(dtoList);
+    }
+
+    /*  update user in cache*/
+    public void updateUserCache(String phoneNumber) {
+        userService.updateUserCache(phoneNumber);
     }
 }

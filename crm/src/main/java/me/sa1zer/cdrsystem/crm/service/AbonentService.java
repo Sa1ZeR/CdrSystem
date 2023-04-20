@@ -6,6 +6,7 @@ import me.sa1zer.cdrsystem.common.payload.dto.ReportDto;
 import me.sa1zer.cdrsystem.common.object.enums.OperationType;
 import me.sa1zer.cdrsystem.common.payload.response.PhoneReportResponse;
 import me.sa1zer.cdrsystem.common.service.HttpService;
+import me.sa1zer.cdrsystem.common.service.KafkaSender;
 import me.sa1zer.cdrsystem.commondb.entity.Payment;
 import me.sa1zer.cdrsystem.commondb.entity.User;
 import me.sa1zer.cdrsystem.common.object.enums.UserRole;
@@ -38,6 +39,7 @@ public class AbonentService {
 
     private final UserService userService;
     private final PaymentService paymentService;
+    private final KafkaSender kafkaSender;
 
     private final PayUserMapper payUserMapper;
     private final ReportMapper reportMapper;
@@ -45,16 +47,19 @@ public class AbonentService {
 
     @Value("${settings.url.brt-address}")
     private String brtUrl;
+
+    @Value("${settings.broker.topic.user-update-topic}")
+    private String userUpdateTopic;
     @Transactional
     public ResponseEntity<?> payMoney(PayRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User user = userService.findUserByPhone(authentication.getName());
+        User user = userService.getUserByPhone(authentication.getName());
 
         if(!request.numberPhone().equals(user.getPhone()) && !user.getRoles().contains(UserRole.MANAGER))
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     "You are don't have permissions to pay another phone number");
 
-        User searched = userService.findUserByPhone(request.numberPhone());
+        User searched = userService.getUserByPhone(request.numberPhone());
         searched.setBalance(searched.getBalance() + request.money());
 
         Payment payment = Payment.builder()
@@ -71,12 +76,15 @@ public class AbonentService {
         response.setId(payment.getId());
         response.setMoney(payment.getAmount());
 
+        //send message to kafka for update user data
+        kafkaSender.sendMessage(userUpdateTopic, user.getPhone());
+
         return ResponseEntity.ok(response);
     }
 
     public ResponseEntity<?> getReport(String numberPhone, Principal principal) {
-        User user = userService.findUserByPhone(principal.getName());
-        User searched = userService.findUserByPhone(numberPhone);
+        User user = userService.getUserByPhone(principal.getName());
+        User searched = userService.getUserByPhone(numberPhone);
         if(!numberPhone.equals(user.getPhone()) && !user.getRoles().contains(UserRole.MANAGER))
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     "You are don't have permissions to get information about another phone number");

@@ -4,6 +4,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.sa1zer.cdrsystem.common.object.enums.UserRole;
+import me.sa1zer.cdrsystem.common.service.KafkaSender;
 import me.sa1zer.cdrsystem.commondb.entity.Tariff;
 import me.sa1zer.cdrsystem.commondb.entity.User;
 import me.sa1zer.cdrsystem.commondb.service.TariffService;
@@ -13,6 +14,7 @@ import me.sa1zer.cdrsystem.crm.payload.mapper.CreateUserMapper;
 import me.sa1zer.cdrsystem.crm.payload.request.ChangeTariffRequest;
 import me.sa1zer.cdrsystem.crm.payload.request.CreateUserRequest;
 import me.sa1zer.cdrsystem.crm.payload.response.CreateUserResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -33,18 +35,24 @@ public class ManagerService {
 
     private final UserService userService;
     private final TariffService tariffService;
+    private final KafkaSender kafkaSender;
     private final ChangeTariffMapper changeTariffMapper;
     private final CreateUserMapper createUserMapper;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
 
+    @Value("${settings.broker.topic.user-update-topic}")
+    private String userUpdateTopic;
+
     @Transactional
     public ResponseEntity<?> changeTariff(ChangeTariffRequest request) {
-        User user = userService.findUserByPhone(request.numberPhone());
+        User user = userService.getUserByPhone(request.numberPhone());
 
         Tariff tariff = tariffService.findByCode(request.tariffId());
         user.setTariff(tariff);
 
         userService.save(user);
+
+        kafkaSender.sendMessage(userUpdateTopic, user.getPhone());
 
         return ResponseEntity.ok(changeTariffMapper.map(user));
     }
@@ -69,6 +77,8 @@ public class ManagerService {
         CreateUserResponse userDto = createUserMapper.map(build);
         userDto.setPassword(password); //да, это небезопасно, но нам нужен пароль для авторизации в некоторых контроллерах
         //будем считать, что пароль на самом деле отправляется пользователю на почту, а он в свою очередь может сменить пароль в личном кабинете на любой желающий
+
+        kafkaSender.sendMessage(userUpdateTopic, build.getPhone());
 
         return ResponseEntity.ok(userDto);
     }

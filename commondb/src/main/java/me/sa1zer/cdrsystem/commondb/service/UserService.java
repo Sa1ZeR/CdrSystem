@@ -9,15 +9,15 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import me.sa1zer.cdrsystem.commondb.repository.UserRepository;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 @Slf4j
 public class UserService {
+
+    private static final Map<String, User> USER_CACHE = new HashMap<>();
 
     private final UserRepository userRepository;
 
@@ -52,5 +52,22 @@ public class UserService {
     @Transactional
     public void updateUserBalance(String phone, double balance) {
         userRepository.updateUserBalance(phone, balance);
+    }
+
+    //get user from cache, if not exist - get from db
+    public User getUserByPhone(String phone) {
+        User user = USER_CACHE.get(phone);
+        if(user == null) {
+            user = findUserByPhone(phone);
+            USER_CACHE.put(user.getPhone(), user);
+        }
+
+        return user;
+    }
+
+    /*  update user in cache*/
+    public void updateUserCache(String phoneNumber) {
+        User user = findUserByPhone(phoneNumber);
+        USER_CACHE.put(user.getPhone(), user);
     }
 }

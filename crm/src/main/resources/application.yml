@@ -28,3 +28,6 @@ settings:
   url:
     brt-address: "http://localhost:3002/api/v1/brt/"
     hrs-address: "http://localhost:3001/api/v1/hrs/"
+  broker:
+    topic:
+      user-update-topic: "t.user.update"

@@ -13,6 +13,7 @@ import java.util.Set;
 
 public interface UserRepository extends JpaRepository<User, Long> {
 
+    @EntityGraph(attributePaths = {"roles", "tariff"})
     Optional<User> findUserByPhone(String phone);
 
     Optional<User> findUserByPhoneAndBalanceGreaterThan(String phone, double balance);
