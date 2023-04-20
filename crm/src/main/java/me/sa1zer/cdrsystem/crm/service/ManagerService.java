@@ -5,8 +5,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.sa1zer.cdrsystem.common.object.enums.UserRole;
 import me.sa1zer.cdrsystem.common.service.KafkaSender;
+import me.sa1zer.cdrsystem.commondb.entity.Operator;
 import me.sa1zer.cdrsystem.commondb.entity.Tariff;
 import me.sa1zer.cdrsystem.commondb.entity.User;
+import me.sa1zer.cdrsystem.commondb.service.OperatorService;
 import me.sa1zer.cdrsystem.commondb.service.TariffService;
 import me.sa1zer.cdrsystem.commondb.service.UserService;
 import me.sa1zer.cdrsystem.crm.payload.mapper.ChangeTariffMapper;
@@ -32,6 +34,7 @@ public class ManagerService {
 
     private final UserService userService;
     private final TariffService tariffService;
+    private final OperatorService operatorService;
     private final KafkaSender kafkaSender;
     private final ChangeTariffMapper changeTariffMapper;
     private final CreateUserMapper createUserMapper;
@@ -93,12 +96,14 @@ public class ManagerService {
      */
     private void createUsers() {
         List<Tariff> tariffs = tariffService.findAll();
+        List<Operator> operators = operatorService.findAll();
         for(int i = 0; i < 500; i++) {
             User testUser = User.builder()
                     .balance((int)(Math.random() * 1000) - 115)
                     .roles(new HashSet<>(Collections.singleton(UserRole.SUBSCRIBER)))
                     .password(bCryptPasswordEncoder.encode("test"))
                     .tariff(tariffs.get((int) (Math.random() * tariffs.size())))
+                    .operator(getOperator(operators))
                     .phone(genTestPhoneNumber())
                     .build();
 
@@ -106,6 +111,18 @@ public class ManagerService {
         }
 
         log.info("Test users successfully created");
+    }
+
+    //get random operator; with more than 50% return Ромашка
+    public Operator getOperator(List<Operator> operators) {
+        double chance = Math.random() * 100;
+        if(chance >= 50) {
+            for(Operator operator : operators) {
+                if(operator.getName().equalsIgnoreCase("Ромашка"))
+                    return operator;
+            }
+        }
+        return operators.get((int) (Math.random() * operators.size()));
     }
 
     //create default admin user (when the app is first launched)

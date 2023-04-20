@@ -36,4 +36,8 @@ public class User extends BaseEntity<Long> {
     @JoinColumn(name = "tariff_id")
     private Tariff tariff;
 
+    @OneToOne
+    @JoinColumn(name = "operator_id")
+    private Operator operator;
+
 }

@@ -11,6 +11,8 @@ import java.util.List;
 
 @Service
 public class XCalculator implements BaseCalculator {
+
+    private static final double PER_MINUTE_PRICE = 1.5;
     @Override
     public List<ReportDto> getReportData(List<CdrPlusDto> cdrPlusList) {
         List<ReportDto> reportList = new ArrayList<>();
@@ -18,7 +20,13 @@ public class XCalculator implements BaseCalculator {
         for(CdrPlusDto cdrPlusDto : cdrPlusList) {
             long duration = cdrPlusDto.startTime().until(cdrPlusDto.endTime(), ChronoUnit.SECONDS);
 
-            double price = 0;
+            double price;
+            //будем считать, что на hrs могут прийти не только cdr с оператором ромашка
+            if(cdrPlusDto.operator().equalsIgnoreCase("Ромашка")) {
+                price = 0;
+            } else {
+                price = Math.ceil(duration / 60D) * PER_MINUTE_PRICE;
+            }
 
             reportList.add(new ReportDto(cdrPlusDto.phoneNumber(), cdrPlusDto.startTime(),
                     cdrPlusDto.endTime(), cdrPlusDto.callType(), cdrPlusDto.tariffType(), price, duration));

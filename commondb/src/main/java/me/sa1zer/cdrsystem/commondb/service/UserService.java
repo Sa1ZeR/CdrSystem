@@ -31,8 +31,8 @@ public class UserService {
         return userRepository.findAllInSet(phones);
     }
 
-    public List<User> findAllWithPositiveBalance(Set<String> phones) {
-        return userRepository.findAllWithPositiveBalance(phones);
+    public List<User> findAllWithPositiveBalance(Set<String> phones, String operator) {
+        return userRepository.findAllWithPositiveBalance(phones, operator);
     }
 
     public List<User> findAll() {

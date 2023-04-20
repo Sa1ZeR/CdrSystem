@@ -5,15 +5,18 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import me.sa1zer.cdrsystem.common.payload.dto.CdrDto;
+import me.sa1zer.cdrsystem.common.payload.dto.OperatorDto;
 import me.sa1zer.cdrsystem.common.payload.dto.UserDto;
 import me.sa1zer.cdrsystem.common.object.enums.CallType;
 import me.sa1zer.cdrsystem.common.utils.IOUtils;
 import me.sa1zer.cdrsystem.common.utils.TimeUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -100,13 +103,8 @@ public class CDRService {
 
         StringBuilder stringBuilder = new StringBuilder();
 
-        ResponseEntity<UserDto[]> response = restTemplate.getForEntity(brtAddress + "user/getAll",
-                UserDto[].class);
-        if(!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-            log.error(String.format("Can't get user's list. Response code: %s, message: %s",
-                    response.getStatusCode(), response.toString()));
-            return;
-        }
+        ResponseEntity<UserDto[]> response = getUsers();
+
         List<UserDto> users = Arrays.asList(response.getBody());
 
         LocalDateTime start;
@@ -139,5 +137,15 @@ public class CDRService {
     public void updateCdr() {
         genCDRFile(true);
         parseCDRFile();
+    }
+
+    //Для генерации тестовых данных нам приходится обращаться к другим сервисам для получения существующих пользователей
+    private ResponseEntity<UserDto[]>getUsers() {
+        ResponseEntity<UserDto[]> response = restTemplate.getForEntity(brtAddress + "user/getAll",
+                UserDto[].class);
+        if(!response.getStatusCode().is2xxSuccessful() || response.getBody() == null)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Server Error");
+
+        return response;
     }
 }

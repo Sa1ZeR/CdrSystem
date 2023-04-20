@@ -8,6 +8,6 @@ import java.time.LocalDateTime;
 
 @Builder
 public record CdrPlusDto(String phoneNumber, LocalDateTime startTime, LocalDateTime endTime,
-                         CallType callType, TariffType tariffType) {
+                         CallType callType, TariffType tariffType, String operator) {
 
 }

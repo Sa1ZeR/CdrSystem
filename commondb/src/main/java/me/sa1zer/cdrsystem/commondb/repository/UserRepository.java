@@ -18,9 +18,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findUserByPhoneAndBalanceGreaterThan(String phone, double balance);
 
-    @Query("select u from User u where u.balance > 0 and u.phone in (:phones)")
-    @EntityGraph(attributePaths = {"tariff"})
-    List<User> findAllWithPositiveBalance(Set<String> phones);
+    @Query("select u from User u join fetch Operator o on o.id = u.operator.id " +
+            "where o.name = :operator and u.balance > 0 and u.phone in (:phones)")
+    @EntityGraph(attributePaths = {"tariff", "operator"})
+    List<User> findAllWithPositiveBalance(Set<String> phones, String operator);
 
     @Modifying
     @Query("update User u set u.balance = u.balance + :amount where u.phone = :phone")

@@ -4,6 +4,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.sa1zer.cdrsystem.brt.payload.mapper.BillingMapper;
+import me.sa1zer.cdrsystem.brt.payload.mapper.OperatorMapper;
 import me.sa1zer.cdrsystem.brt.payload.mapper.ReportDataMapper;
 import me.sa1zer.cdrsystem.brt.payload.mapper.UserMapper;
 import me.sa1zer.cdrsystem.common.payload.dto.*;
@@ -15,6 +16,7 @@ import me.sa1zer.cdrsystem.commondb.entity.BillingData;
 import me.sa1zer.cdrsystem.commondb.entity.ReportData;
 import me.sa1zer.cdrsystem.commondb.entity.User;
 import me.sa1zer.cdrsystem.commondb.service.BillingDataService;
+import me.sa1zer.cdrsystem.commondb.service.OperatorService;
 import me.sa1zer.cdrsystem.commondb.service.UserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -36,9 +38,11 @@ public class BRTService {
     private static final Map<String, Double> TOTAL_COST_CACHE = new HashMap<>();
 
     private final UserService userService;
+    private final OperatorService operatorService;
     private final ReportDataMapper reportDataMapper;
     private final UserMapper userMapper;
     private final BillingMapper billingMapper;
+    private final OperatorMapper operatorMapper;
     private final BillingDataService billingDataService;
 
     private final HttpService httpService;
@@ -130,12 +134,12 @@ public class BRTService {
         Map<String, List<CdrDto>> cdrData = response.getBody().cdrData();
 
         //get users with balance > 0 && operator == Ромашка
-        List<User> users = userService.findAllWithPositiveBalance(cdrData.keySet());
+        List<User> users = userService.findAllWithPositiveBalance(cdrData.keySet(), "Ромашка");
 
         updateCdrPlus(users, cdrData);
     }
 
-    //get cdr + tariff data
+    //create cdr + tariff data
     private void updateCdrPlus(List<User> users, Map<String, List<CdrDto>> cdrData) {
         CDR_PLUS_CACHE.clear();
 
@@ -151,6 +155,7 @@ public class BRTService {
                             .startTime(cdrDto.startTime())
                             .endTime(cdrDto.endTime())
                             .tariffType(u.getTariff().getType())
+                            .operator(u.getOperator().getName())
                             .build());
 
                     CDR_PLUS_CACHE.put(u.getPhone(), cdrPlusData);
@@ -182,5 +187,11 @@ public class BRTService {
     /*  update user in cache*/
     public void updateUserCache(String phoneNumber) {
         userService.updateUserCache(phoneNumber);
+    }
+
+    public List<OperatorDto> getAllOperators() {
+        return operatorService.findAll().stream()
+                .map(operatorMapper::map)
+                .collect(Collectors.toList());
     }
 }
