@@ -50,6 +50,11 @@ public class UserService {
     }
 
     @Transactional
+    public List<User> saveAll(Collection<User> users) {
+        return userRepository.saveAll(users);
+    }
+
+    @Transactional
     public void updateUserBalance(String phone, double balance) {
         userRepository.updateUserBalance(phone, balance);
     }

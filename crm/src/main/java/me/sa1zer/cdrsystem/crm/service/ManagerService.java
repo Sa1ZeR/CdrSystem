@@ -22,10 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @Transactional(readOnly = true)
@@ -94,27 +91,25 @@ public class ManagerService {
     /**
      * this method creating users with test data
      */
-    public void createUsers() {
+    private void createUsers() {
         List<Tariff> tariffs = tariffService.findAll();
-        if(userService.findAll().size() <= 1) {
-            for(int i = 0; i < 500; i++) {
-                User testUser = User.builder()
-                        .balance((int)(Math.random() * 1000) - 115)
-                        .roles(new HashSet<>(Collections.singleton(UserRole.SUBSCRIBER)))
-                        .password(bCryptPasswordEncoder.encode("test"))
-                        .tariff(tariffs.get((int) (Math.random() * tariffs.size())))
-                        .phone(genTestPhoneNumber())
-                        .build();
+        for(int i = 0; i < 500; i++) {
+            User testUser = User.builder()
+                    .balance((int)(Math.random() * 1000) - 115)
+                    .roles(new HashSet<>(Collections.singleton(UserRole.SUBSCRIBER)))
+                    .password(bCryptPasswordEncoder.encode("test"))
+                    .tariff(tariffs.get((int) (Math.random() * tariffs.size())))
+                    .phone(genTestPhoneNumber())
+                    .build();
 
-                userService.save(testUser);
-            }
+            userService.save(testUser);
         }
 
         log.info("Test users successfully created");
     }
 
     //create default admin user (when the app is first launched)
-    public void createManager() {
+    private void createManager() {
         String adminPhone = "79024333333";
         if(!userService.isUserExist(adminPhone)) {
             User user = User.builder()
