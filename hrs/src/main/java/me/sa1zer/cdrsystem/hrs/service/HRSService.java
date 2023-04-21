@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ObjectUtils;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
@@ -36,41 +37,13 @@ public class HRSService {
         calculators.forEach(c-> CALCULATORS.put(c.getType(), c));
     }
 
-//    @PostConstruct
-//    public void init() {
-//        List<BillingData> billingData = brtService.findAllBillingData();
-//        if(billingData.size() == 0)
-//            calculateReportData();
-//        else updateReportData(billingData);
-//    }
-
-//    private void updateReportData(List<BillingData> billingData) {
-//        Map<String, List<ReportDto>> map = new HashMap<>();
-//
-//        billingData.forEach(b-> {
-//            map.put(b.getUser().getPhone(),
-//                    b.getReportData().stream().map(d -> ReportDto.builder()
-//                            .phoneNumber(b.getUser().getPhone())
-//                            .callType(d.getCallType())
-//                            .startTime(d.getStartTime())
-//                            .endTime(d.getEndTime())
-//                            .tariffType(b.getUser().getTariff().getType())
-//                            .duration(d.getDuration())
-//                            .cost(d.getCost())
-//                            .build()).collect(Collectors.toList()));
-//
-//            brtService.updateTotalPrice(b.getUser().getPhone(), b.getTotalCost());
-//        });
-//
-//        brtService.updateReportData(map);
-//    }
-
     public ResponseEntity<?> billing(BillingRequest request) {
         ActionType type = ActionType.getType(request.action());
         if(type != ActionType.RUN)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Bad action type");
-
-        httpService.sendPatchRequest(brtAddress + "report/update", null, String.class);
+        if(!ObjectUtils.isEmpty(request.clearOld()) && request.clearOld())
+            //send request to brt if needed. he must clear old report data
+            httpService.sendPatchRequest(brtAddress + "report/update", null, String.class);
 
         return ResponseEntity.ok(calculateReportData());
     }
@@ -84,6 +57,7 @@ public class HRSService {
     private BillingResponse calculate(Map<String, List<CdrPlusDto>> cdrPlusData) {
         List<BillingDataDto> reportsToSave = new ArrayList<>();
 
+        //calculating total price and send to brt service (save user's balance changes)
         for(Map.Entry<String, List<CdrPlusDto>> entry : cdrPlusData.entrySet()) {
             List<CdrPlusDto> cdrData = entry.getValue();
             if(cdrData.size() > 0) {
@@ -103,6 +77,7 @@ public class HRSService {
 
         ReportUpdateDataRequest request = new ReportUpdateDataRequest(reportsToSave);
 
+        //after calculation need to save billing data in db, that can brt service
         return httpService.sendPatchRequest(brtAddress + "report/updateBillingData", request, BillingResponse.class);
     }
 }
