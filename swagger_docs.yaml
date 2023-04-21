@@ -307,7 +307,7 @@ paths:
       description: Выполнение тарификации
       operationId: billing
       requestBody:
-        description: В теле запроса обязательно должен указан тип действия
+        description: В теле запроса обязательно должен указан тип действия. параметр clearOld является опциональным, он отвечает за отчистку данных о предыдущем биллинге в бд
         content:
           application/json:
             schema:
@@ -318,6 +318,9 @@ paths:
                 action:
                   type: string
                   example: "run"
+                clearOld:
+                  type: boolean
+                  example: true
         required: true
       responses:
         '200':
