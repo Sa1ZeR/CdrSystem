@@ -11,4 +11,5 @@ public class PayUserResponse {
     private Long userId;
     private String numberPhone;
     private double money;
+    private double balance;
 }

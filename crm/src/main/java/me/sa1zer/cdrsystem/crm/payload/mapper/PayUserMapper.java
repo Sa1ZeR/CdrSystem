@@ -12,7 +12,7 @@ public class PayUserMapper implements Mapper<User, PayUserResponse> {
         return PayUserResponse.builder()
                 .userId(from.getId())
                 .numberPhone(from.getPhone())
-                .money(from.getBalance())
+                .balance(from.getBalance())
                 .build();
     }
 }
