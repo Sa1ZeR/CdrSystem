@@ -1,0 +1,343 @@
+openapi: 3.0.3
+info:
+  title: CdrSystem
+  description: API Docs for CdrSystem
+  version: 1.0.0
+
+servers:
+  - url: http://localhost/api/v1
+tags:
+  - name: auth
+    description: В этом разделе находятся методы для авторизации пользователя.
+  - name: abonent
+    description: В этом разделе находятся методы взаимодействия абонента с системой
+  - name: manager
+    description: В этом разделе находятся методы взаимодействия менеджера с системой
+paths:
+  /auth/signin:
+    post:
+      tags:
+        - auth
+      summary: Авторизация пользователя в системе
+      description: Пользователь авторизуется. ВНИМАНИЕ!!! В ответе будет jwt токен, который используется в Хедере запросов из разделов abonent и manager
+      operationId: abonentPay
+      requestBody:
+        description: В теле запроса обязательно должен быть номер абонента и пароль
+        content:
+          application/json:
+            schema:
+              required:
+                - phoneNumber
+                - password
+              type: object
+              properties:
+                phoneNumber:
+                  type: integer
+                  example: 79024333333
+                password:
+                  type: string
+                  example: "admin"
+        required: true
+      responses:
+        '200':
+          description: Успешная авторизация
+          content:
+            application/json:
+              schema:
+                required:
+                  - token
+                type: object
+                properties:
+                  token:
+                    type: string
+                    format: String
+                    example: "Bearer eyJhbGciOiJIUzM4NCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiI3OTAyNDMzMzMzMyIsImhdCI6MTY4MTg5MjQxMiwiZXhwIjoxNjkxODkyNDEyfQ.fyVsReUO_2Jw07VsYmtIoYIytixKhmjdZEcemAcoEp6dF55hsL-K36Dc1N5mM"
+  /abonent/pay:
+    patch:
+      tags:
+        - abonent
+      summary: Пополнение баланса абонентом
+      description: Абонент пополняет свой счет
+      operationId: abonentPay
+      requestBody:
+        description: В теле запроса обязательно должен быть номер абонента и сумма, на которую абонент планирует пополнить баланс
+        content:
+          application/json:
+            schema:
+              required:
+                - phoneNumber
+                - money
+              type: object
+              properties:
+                phoneNumber:
+                  type: integer
+                  example: 79001112233
+                money:
+                  type: integer
+                  format: int64
+                  example: 400
+        required: true
+      responses:
+        '200':
+          description: Успешное пополнение баланса
+          content:
+            application/json:
+              schema:
+                required:
+                  - id
+                  - phoneNumber
+                  - balance
+                  - money
+                  - userId
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    format: int64
+                    example: 11111
+                  userId:
+                    type: integer
+                    format: int64
+                    example: 1
+                  phoneNumber:
+                    type: integer
+                    format: int64
+                    example: 79001112233
+                  money:
+                    type: number
+                    format: number
+                    example: 400
+                  balance:
+                    type: number
+                    format: number
+                    example: 935
+  /abonent/report/{phoneNumber}:
+    get:
+      tags:
+        - abonent
+      summary: Получение детализации звонков
+      description: Получение детализации звонков
+      operationId: getReportByPhone
+      parameters:
+        - name: phoneNumber
+          in: path
+          description: номер абонента
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Успешный запрос на детализацию
+          content:
+            application/json:
+              schema:
+                required:
+                  - id
+                  - phoneNumber
+                  - tariffIndex
+                  - payload
+                  - totalCost
+                  - currentBalance
+                  - monetaryUnit
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    format: int64
+                    example: 11
+                  phoneNumber:
+                    type: integer
+                    format: int64
+                    example: 79001112233
+                  tariffindex:
+                    type: string
+                    format: string
+                    example: "06"
+                  payload:
+                    type: array
+                    format: array
+                    items:
+                      properties:
+                        callType:
+                          type: string
+                          format: string
+                          example: "02"
+                        startTime:
+                          type: string
+                          format: string
+                          example: "2023-11-14 22:45:07"
+                        endTime:
+                          type: string
+                          format: string
+                          example: "2023-11-14 23:15:13"
+                        duration:
+                          type: string
+                          format: string
+                          example: "01:17:15"
+                        currentBalance:
+                          type: number
+                          format: number
+                          example: 15  
+                  totalCost:
+                    type: integer
+                    format: int64
+                    example: 355
+                  currentBalance:
+                    type: integer
+                    format: int64
+                    example: 15
+                  monetaryUnit:
+                    type: string
+                    format: string
+                    example: "rubles"
+
+  /manager/chaneTariff:
+    patch:
+      tags:
+        - manager
+      summary: Менеджер сменяет тариф пользователю
+      description: Смена тарифа у пользователя
+      operationId: chaneTariff
+      requestBody:
+        description: В теле запроса обязательно должен быть номер абонента и код тарифа, на который абонент планирует сменить тариф
+        content:
+          application/json:
+            schema:
+              required:
+                - phoneNumber
+                - tariff_id
+              type: object
+              properties:
+                phoneNumber:
+                  type: integer
+                  example: 79001111111
+                tariff_id:
+                  type: string
+                  example: "03"
+        required: true
+      responses:
+        '200':
+          description: Успешная смена тарифа
+          content:
+            application/json:
+              schema:
+                required:
+                  - id
+                  - phoneNumber
+                  - tariff_id
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    format: int64
+                    example: 10
+                  phoneNumber:
+                    type: integer
+                    format: int64
+                    example: 79001111111
+                  tariff_id:
+                    type: string
+                    example: "11"
+  /manager/abonent:
+    post:
+      tags:
+        - manager
+      summary: Менеджер создаёт нового абонента
+      description: Менеджер создаёт нового абонента
+      operationId: managerAbonent
+      requestBody:
+        description: В теле запроса обязательно должен быть номер абонента и сумма, на которую абонент планирует пополнить баланс
+        content:
+          application/json:
+            schema:
+              required:
+                - phoneNumber
+                - tarrif
+                - balance
+              type: object
+              properties:
+                phoneNumber:
+                  type: integer
+                  example: 79001111111
+                balance:
+                  type: integer
+                  example: 1
+                tarrif:
+                  type: string
+                  example: "03"
+        required: true
+      responses:
+        '200':
+          description: Успешное создание абонента
+          content:
+            application/json:
+              schema:
+                required:
+                  - id
+                  - phoneNumber
+                  - tarrif
+                  - password
+                  - balance
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    format: int64
+                    example: 10
+                  phoneNumber:
+                    type: integer
+                    format: int64
+                    example: 79001112233
+                  tarrif:
+                    type: string
+                    example: "03"
+                  password:
+                    type: string
+                    example: "test"
+                  balance:
+                    type: integer
+                    format: int64
+                    example: 300
+  /manager/billing:
+    patch:
+      tags:
+        - manager
+      summary: Менеджер выполняет тарификацию
+      description: Выполнение тарификации
+      operationId: billing
+      requestBody:
+        description: В теле запроса обязательно должен указан тип действия
+        content:
+          application/json:
+            schema:
+              required:
+                - action
+              type: object
+              properties:
+                action:
+                  type: string
+                  example: "run"
+        required: true
+      responses:
+        '200':
+          description: Успешная смена тарифа
+          content:
+            application/json:
+              schema:
+                required:
+                  - numbers
+                type: object
+                properties:
+                  numbers:
+                    type: array
+                    items:
+                      properties:
+                        phoneNumber:
+                          type: string
+                          example: "79561006483"
+                        balance:
+                          type: number
+                          example: 533
+
+      
