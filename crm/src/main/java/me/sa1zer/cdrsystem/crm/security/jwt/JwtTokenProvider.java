@@ -24,7 +24,6 @@ public class JwtTokenProvider {
 
     private static final String TOKEN_PREFIX = "Bearer ";
     private static final String HEADER_AUTHORIZE = "Authorization";
-    private static final String CONTENT_TYPE = "application/json";
 
     private final UserDetailsServiceImpl userService;
 

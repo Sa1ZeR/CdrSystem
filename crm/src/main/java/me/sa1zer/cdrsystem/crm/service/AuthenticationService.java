@@ -16,6 +16,7 @@ public class AuthenticationService {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
 
+    //authentication with token generation
     public ResponseEntity<?> signIn(SignInRequest request) {
         var authenticate = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.numberPhone(), request.password()));

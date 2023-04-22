@@ -14,7 +14,6 @@ public class JwtUserFactory {
     }
 
     public static JwtUser createJwtUser(User user) {
-        //may be active = balance > 0?
         return new JwtUser(user.getId(), user.getPhone(), user.getPassword(), true, getAuthorities(user));
     }
 

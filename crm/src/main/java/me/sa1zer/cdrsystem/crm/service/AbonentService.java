@@ -55,6 +55,7 @@ public class AbonentService {
         User searched = userService.getUserByPhone(request.numberPhone());
         searched.setBalance(searched.getBalance() + request.money());
 
+        //create payment data in db
         Payment payment = Payment.builder()
                 .amount(request.money())
                 .user(searched)
@@ -82,10 +83,12 @@ public class AbonentService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     "You are don't have permissions to get information about another phone number");
 
+        //send request to brt because he's storing information about billing (report data)
         PhoneReportResponse responseByPhone = httpService.sendGetRequest(String.format(
                 brtUrl + "/report/getReportByPhone/%s", numberPhone), PhoneReportResponse.class).getBody();
         List<ReportDto> reportByPhone = responseByPhone.reports();
 
+        //create response
         AbonentReportResponse reportResponse = AbonentReportResponse.builder()
                 .id(searched.getId())
                 .numberPhone(searched.getPhone())

@@ -52,6 +52,7 @@ public class ManagerService {
 
         userService.save(user);
 
+        //update user in cache
         kafkaSender.sendMessage(userUpdateTopic, user.getPhone());
 
         return ResponseEntity.ok(changeTariffMapper.map(user));
@@ -61,6 +62,7 @@ public class ManagerService {
     public ResponseEntity<?> createUser(CreateUserRequest request) {
         if(userService.isUserExist(request.numberPhone()))
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User already exists");
+        //create custom password for user
         String password = UUID.randomUUID().toString().replaceAll("-", "")
                 .substring(0, 16);
 
@@ -85,6 +87,7 @@ public class ManagerService {
 
     @PostConstruct
     public void init() {
+        //if data size = 0, we are created manager and test users
         if(userService.findAll().size() == 0) {
             createManager();
             createUsers();
@@ -114,7 +117,7 @@ public class ManagerService {
     }
 
     //get random operator; with more than 50% return Ромашка
-    public Operator getOperator(List<Operator> operators) {
+    private Operator getOperator(List<Operator> operators) {
         double chance = Math.random() * 100;
         if(chance >= 50) {
             for(Operator operator : operators) {

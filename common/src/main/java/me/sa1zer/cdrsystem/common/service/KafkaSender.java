@@ -11,9 +11,9 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class KafkaSender {
 
-    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
-    public void sendMessage(String topic, String message) {
+    public void sendMessage(String topic, Object message) {
         kafkaTemplate.send(topic, message);
         log.info("Successfully send message to {} topic", topic);
     }
