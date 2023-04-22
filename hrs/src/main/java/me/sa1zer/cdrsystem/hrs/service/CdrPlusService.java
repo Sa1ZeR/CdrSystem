@@ -28,6 +28,8 @@ public class CdrPlusService {
     private static final Map<String, List<CdrPlusDto>> CDR_PLUS_CACHE = new HashMap<>();
     private final Path CDR_PLUS_FILE = Paths.get("cdr+.txt");
     public void parseFile() {
+        CDR_PLUS_CACHE.clear();
+
         try(BufferedReader br = Files.newBufferedReader(CDR_PLUS_FILE)) {
             String s;
             while ((s = br.readLine()) != null) {

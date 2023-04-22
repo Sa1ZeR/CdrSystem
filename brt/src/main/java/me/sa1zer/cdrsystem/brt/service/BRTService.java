@@ -12,8 +12,8 @@ import me.sa1zer.cdrsystem.common.payload.dto.BillingDto;
 import me.sa1zer.cdrsystem.common.payload.dto.ReportDto;
 import me.sa1zer.cdrsystem.common.payload.dto.UserDto;
 import me.sa1zer.cdrsystem.common.payload.request.BillingRequest;
-import me.sa1zer.cdrsystem.common.payload.response.ReportUpdateDataResponse;
 import me.sa1zer.cdrsystem.common.payload.response.BillingResponse;
+import me.sa1zer.cdrsystem.common.payload.response.ReportUpdateDataResponse;
 import me.sa1zer.cdrsystem.common.service.HttpService;
 import me.sa1zer.cdrsystem.common.service.KafkaSender;
 import me.sa1zer.cdrsystem.commondb.entity.BillingData;
@@ -24,6 +24,7 @@ import me.sa1zer.cdrsystem.commondb.service.UserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -143,6 +144,7 @@ public class BRTService {
         return updateReportData(response);
     }
 
+    @Transactional
     public BillingResponse updateReportData(ReportUpdateDataResponse request) {
         List<BillingData> reportsToSave = new LinkedList<>();
         Set<String> updated = new HashSet<>();

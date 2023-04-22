@@ -116,10 +116,10 @@ public class ManagerService {
         log.info("Test users successfully created");
     }
 
-    //get random operator; with more than 50% return Ромашка
+    //get random operator; with more than 65% return Ромашка
     private Operator getOperator(List<Operator> operators) {
         double chance = Math.random() * 100;
-        if(chance >= 50) {
+        if(chance >= 65) {
             for(Operator operator : operators) {
                 if(operator.getName().equalsIgnoreCase("Ромашка"))
                     return operator;
