@@ -22,8 +22,8 @@ public class ManagerController {
     private final ManagerService managerService;
     private final HttpService httpService;
 
-    @Value("${settings.url.hrs-address}")
-    private String hrsAddress;
+    @Value("${settings.url.brt-address}")
+    private String brtAddress;
 
     @PatchMapping("changeTariff")
     public ResponseEntity<?> chaneTariff(@Valid @RequestBody ChangeTariffRequest request) {
@@ -37,6 +37,6 @@ public class ManagerController {
 
     @PatchMapping("billing")
     public ResponseEntity<?> billing(@Valid @RequestBody BillingRequest request) {
-        return ResponseEntity.ok(httpService.sendPatchRequest(hrsAddress + "billing", request, BillingResponse.class));
+        return ResponseEntity.ok(httpService.sendPatchRequest(brtAddress + "report/billing", request, BillingResponse.class));
     }
 }

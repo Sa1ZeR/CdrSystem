@@ -3,24 +3,29 @@ package me.sa1zer.cdrsystem.brt.service;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import me.sa1zer.cdrsystem.brt.payload.mapper.*;
-import me.sa1zer.cdrsystem.common.payload.dto.*;
-import me.sa1zer.cdrsystem.common.payload.request.ReportUpdateDataRequest;
+import me.sa1zer.cdrsystem.brt.payload.mapper.BillingMapper;
+import me.sa1zer.cdrsystem.brt.payload.mapper.ReportDataMapper;
+import me.sa1zer.cdrsystem.brt.payload.mapper.ReportDtoMapper;
+import me.sa1zer.cdrsystem.brt.payload.mapper.UserMapper;
+import me.sa1zer.cdrsystem.common.object.enums.ActionType;
+import me.sa1zer.cdrsystem.common.payload.dto.BillingDto;
+import me.sa1zer.cdrsystem.common.payload.dto.ReportDto;
+import me.sa1zer.cdrsystem.common.payload.dto.UserDto;
+import me.sa1zer.cdrsystem.common.payload.request.BillingRequest;
+import me.sa1zer.cdrsystem.common.payload.response.ReportUpdateDataResponse;
 import me.sa1zer.cdrsystem.common.payload.response.BillingResponse;
-import me.sa1zer.cdrsystem.common.payload.response.CdrResponse;
 import me.sa1zer.cdrsystem.common.service.HttpService;
 import me.sa1zer.cdrsystem.common.service.KafkaSender;
 import me.sa1zer.cdrsystem.commondb.entity.BillingData;
 import me.sa1zer.cdrsystem.commondb.entity.ReportData;
 import me.sa1zer.cdrsystem.commondb.entity.User;
 import me.sa1zer.cdrsystem.commondb.service.BillingDataService;
-import me.sa1zer.cdrsystem.commondb.service.OperatorService;
 import me.sa1zer.cdrsystem.commondb.service.UserService;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -30,49 +35,33 @@ import java.util.stream.Collectors;
 @Slf4j
 public class BRTService {
 
-    private static final Map<String, List<CdrPlusDto>> CDR_PLUS_CACHE = new HashMap<>();
     private static final Map<String, List<ReportDto>> REPORT_DATA_CACHE = new HashMap<>();
     private static final Map<String, Double> TOTAL_COST_CACHE = new HashMap<>();
 
     private final UserService userService;
-    private final OperatorService operatorService;
     private final ReportDataMapper reportDataMapper;
     private final ReportDtoMapper reportDtoMapper;
     private final UserMapper userMapper;
     private final BillingMapper billingMapper;
-    private final OperatorMapper operatorMapper;
     private final BillingDataService billingDataService;
+    private final CdrPlusService cdrPlusService;
 
     private final HttpService httpService;
     private final KafkaSender kafkaSender;
 
-    @Value("${settings.url.cdr-address}")
-    private String cdrAddress;
+    @Value("${settings.url.hsr-address}")
+    private String hsrAddress;
 
     @Value("${settings.broker.topic.user-update-topic}")
     private String userUpdateTopic;
 
     @PostConstruct
     public void initService() {
-        //updateCDRPlus(false);
         initReportCache();
-    }
-
-    @Transactional
-    public void updateBalance(String phone, double balance) {
-        userService.updateUserBalance(phone, balance);
-    }
-
-    public Map<String, List<CdrPlusDto>> getCdrPlusData() {
-        return CDR_PLUS_CACHE;
     }
 
     public List<ReportDto> getReportByPhone(String phone) {
         return REPORT_DATA_CACHE.get(phone);
-    }
-
-    public List<User> getUsers(Set<String> phones) {
-        return userService.findAllInSet(phones);
     }
 
     private void updateTotalPrice(String phone, double totalPrice) {
@@ -81,22 +70,6 @@ public class BRTService {
 
     public double getTotalCost(String phone) {
         return TOTAL_COST_CACHE.getOrDefault(phone, 0D);
-    }
-
-    private BillingData addBillingData(String phone, List<ReportDto> reportList, double totalPrice) {
-        User user = userService.getUserByPhone(phone);
-
-        Set<ReportData> reportDataList = reportList.stream().map(reportDataMapper::map).collect(Collectors.toSet());
-
-       return BillingData.builder()
-                .user(user)
-                .reportData(reportDataList)
-                .totalCost(totalPrice)
-                .build();
-    }
-
-    public List<BillingData> findAllBillingData() {
-        return billingDataService.findAll();
     }
 
     private void saveAllBillingData(List<BillingData> reportsToSave) {
@@ -109,8 +82,7 @@ public class BRTService {
         return users.stream().map(userMapper::map).collect(Collectors.toList());
     }
 
-    public void updateReports() {
-        updateCDRPlus(true);
+    private void clearOldData() {
         //clear old report data in db
         deleteAllBillingData();
         //clear cache
@@ -119,76 +91,6 @@ public class BRTService {
 
     private void deleteAllBillingData() {
         billingDataService.deleteAll();
-    }
-
-    private void updateCDRPlus(boolean isNew) {
-        if(isNew) {
-            httpService.sendPatchRequest(cdrAddress + "update", null, String.class);
-        }
-
-        ResponseEntity<CdrResponse> response = httpService.
-                sendGetRequest(cdrAddress + "getAll", CdrResponse.class);
-        if(!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-            log.error(String.format("Can't get cdr data. Response code: %s, message: %s",
-                    response.getStatusCode(), response));
-            return;
-        }
-
-        Map<String, List<CdrDto>> cdrData = response.getBody().cdrData();
-
-        //get users with balance > 0 && operator == Ромашка
-        List<User> users = userService.findAllWithPositiveBalance(cdrData.keySet(), "Ромашка");
-
-        updateCdrPlus(users, cdrData);
-    }
-
-    //create cdr + tariff data
-    private void updateCdrPlus(List<User> users, Map<String, List<CdrDto>> cdrData) {
-        CDR_PLUS_CACHE.clear();
-
-        for(User u : users) {
-            List<CdrDto> cdrDtos = cdrData.get(u.getPhone());
-
-            if(!ObjectUtils.isEmpty(cdrDtos)) {
-                for(CdrDto cdrDto : cdrDtos) {
-                    List<CdrPlusDto> cdrPlusData = CDR_PLUS_CACHE.getOrDefault(u.getPhone(), new ArrayList<>());
-                    cdrPlusData.add(CdrPlusDto.builder()
-                            .phoneNumber(u.getPhone())
-                            .callType(cdrDto.callType())
-                            .startTime(cdrDto.startTime())
-                            .endTime(cdrDto.endTime())
-                            .tariffType(u.getTariff().getType())
-                            .operator(u.getOperator().getName())
-                            .build());
-
-                    CDR_PLUS_CACHE.put(u.getPhone(), cdrPlusData);
-                }
-            }
-        }
-    }
-
-    public BillingResponse updateReportData(ReportUpdateDataRequest request) {
-        List<BillingData> reportsToSave = new LinkedList<>();
-        Set<String> updated = new HashSet<>();
-
-        request.data().forEach(d -> {
-            updateBalance(d.phone(), -d.totalPrice());
-            updateTotalPrice(d.phone(), d.totalPrice()); //update cache
-            updated.add(d.phone());
-
-            REPORT_DATA_CACHE.put(d.phone(), d.reports()); //update cache
-
-            kafkaSender.sendMessage(userUpdateTopic, d.phone()); //update user cache
-
-            reportsToSave.add(addBillingData(d.phone(), d.reports(), d.totalPrice()));
-        });
-
-        saveAllBillingData(reportsToSave);
-
-        List<BillingDto> dtoList = getUsers(updated).stream().map(billingMapper::map)
-                .collect(Collectors.toList());
-
-        return new BillingResponse(dtoList);
     }
 
     /*  update user in cache*/
@@ -205,9 +107,71 @@ public class BRTService {
         });
     }
 
-    public List<OperatorDto> getAllOperators() {
-        return operatorService.findAll().stream()
-                .map(operatorMapper::map)
+    /**
+     * В данный момент взаимодействие сделано при помощи отправки запросов на соответствующие
+     * ендпоинты микросервисов, изначально планировалось сделать при помощи отправки dto'шек через кафку, но в рамках
+     * тз надо работать с файлами. Следующим решением было отправлять файлы через RestTemplate(multipart-form-data),
+     * но после прочтения некоторых статей, оказалось, что не рекомендуется отправлять большие файлы таким способом.
+     * Затем думал решить задачу нотификацией через кафку, но мне нужно получать ответ о завершении какого-либо действия,
+     * а кафка это больше для асинхронного взаимодействия, поэтому в конечном счете я пришел к решению, которое будет по
+     * нужным ендпоинтам проводить определенные действия на микросервисах
+     * @param request
+     * @return users which updated by billing
+     */
+    public BillingResponse billing(BillingRequest request) {
+        ActionType type = ActionType.getType(request.action());
+        if(type != ActionType.RUN)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Bad action type");
+
+        if(!ObjectUtils.isEmpty(request.clearOld()) && request.clearOld())
+            //clear old report data if needed
+            clearOldData();
+
+        //send to cdr service (we must create new cdr.txt) and then we must create cdr+
+        cdrPlusService.updateCDRPlus();
+
+        //send request to brt, that cdr+ was created, and he must launch billing process
+        ReportUpdateDataResponse response = httpService.sendPatchRequest(hsrAddress + "/billing", request, ReportUpdateDataResponse.class);
+
+        //save user changes in db and return response to crm
+        return updateReportData(response);
+    }
+
+    private BillingResponse updateReportData(ReportUpdateDataResponse request) {
+        List<BillingData> reportsToSave = new LinkedList<>();
+        Set<String> updated = new HashSet<>();
+
+        request.data().forEach(d -> {
+            if(d.totalPrice() > 0) {
+                userService.updateUserBalance(d.phone(), -d.totalPrice());
+                updateTotalPrice(d.phone(), d.totalPrice()); //update cache
+            }
+            updated.add(d.phone());
+
+            REPORT_DATA_CACHE.put(d.phone(), d.reports()); //update cache
+
+            //kafkaSender.sendMessage(userUpdateTopic, d.phone()); //update user cache
+
+            reportsToSave.add(createBillingData(d.phone(), d.reports(), d.totalPrice()));
+        });
+
+        saveAllBillingData(reportsToSave);
+
+        List<BillingDto> dtoList = userService.findAllInSet(updated).stream().map(billingMapper::map)
                 .collect(Collectors.toList());
+
+        return new BillingResponse(dtoList);
+    }
+
+    private BillingData createBillingData(String phone, List<ReportDto> reportList, double totalPrice) {
+        User user = userService.getUserByPhone(phone);
+
+        Set<ReportData> reportDataList = reportList.stream().map(reportDataMapper::map).collect(Collectors.toSet());
+
+        return BillingData.builder()
+                .user(user)
+                .reportData(reportDataList)
+                .totalCost(totalPrice)
+                .build();
     }
 }

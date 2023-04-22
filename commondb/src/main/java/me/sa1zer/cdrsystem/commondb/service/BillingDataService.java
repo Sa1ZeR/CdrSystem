@@ -1,11 +1,11 @@
 package me.sa1zer.cdrsystem.commondb.service;
 
 import lombok.RequiredArgsConstructor;
+import me.sa1zer.cdrsystem.commondb.entity.BillingData;
+import me.sa1zer.cdrsystem.commondb.repository.BillingDataRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import me.sa1zer.cdrsystem.commondb.entity.BillingData;
-import me.sa1zer.cdrsystem.commondb.repository.BillingDataRepository;
 
 import java.util.List;
 
@@ -35,4 +35,5 @@ public class BillingDataService {
     public void deleteAll() {
         repository.deleteAll();
     }
+
 }

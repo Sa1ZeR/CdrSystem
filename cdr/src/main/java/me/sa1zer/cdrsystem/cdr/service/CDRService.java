@@ -27,6 +27,9 @@ import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.util.*;
 
+/**
+ * Class which generating cdr.txt
+ */
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -36,8 +39,6 @@ public class CDRService {
     private static final int CDR_LIMES = 5000;
     private static final Random random = new Random();
 
-    private static final Map<String, List<CdrDto>> CDR_CACHE = new HashMap<>();
-
     private final RestTemplate restTemplate;
 
     @Value("${settings.url.brt-address}")
@@ -46,48 +47,6 @@ public class CDRService {
     @PostConstruct
     public void init() {
         genCDRFile(false);
-        parseCDRFile();
-    }
-
-    public void parseCDRFile() {
-        CDR_CACHE.clear();
-
-        try(BufferedReader bis = Files.newBufferedReader(CDR_FILE)) {
-            String s;
-            while ((s = bis.readLine()) != null) {
-                try {
-                    CdrDto cdr = getCdrFromString(s);
-                    if(ObjectUtils.isEmpty(cdr)) continue;
-
-                    List<CdrDto> cdrByPhone = CDR_CACHE.getOrDefault(cdr.phoneNumber(), new ArrayList<>());
-                    cdrByPhone.add(cdr);
-
-                    CDR_CACHE.put(cdr.phoneNumber(), cdrByPhone);
-                } catch (ParseException e) {
-                    throw new RuntimeException(String.format("Error while parsing cdr line %s", s), e);
-                }
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private CdrDto getCdrFromString(String s) throws ParseException {
-        String[] split = s.split(",");
-
-        if(split.length != 4)
-            return null;
-
-        String phone = split[1].trim();
-        LocalDateTime start = TimeUtils.parseTimeFromString(split[2].trim());
-        LocalDateTime end = TimeUtils.parseTimeFromString(split[3].trim());
-        CallType callType = CallType.getType(split[0].trim());
-
-        return new CdrDto(phone, start, end, callType);
-    }
-
-    public Map<String, List<CdrDto>> getCDRData() {
-        return CDR_CACHE;
     }
 
     /**
@@ -95,11 +54,8 @@ public class CDRService {
      */
     @SneakyThrows
     public void genCDRFile(boolean isNew) {
-        if(isNew && Files.exists(CDR_FILE))
-            Files.delete(CDR_FILE);
-
         log.info("CDR generation successfully started!");
-        IOUtils.createFile(CDR_FILE);
+        IOUtils.createFile(CDR_FILE, isNew);
 
         StringBuilder stringBuilder = new StringBuilder();
 
@@ -136,7 +92,6 @@ public class CDRService {
 
     public void updateCdr() {
         genCDRFile(true);
-        parseCDRFile();
     }
 
     //Для генерации тестовых данных нам приходится обращаться к другим сервисам для получения существующих пользователей

@@ -7,12 +7,19 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 @UtilityClass
 public class IOUtils {
 
-    @SneakyThrows
     public static void createFile(Path path) {
+        createFile(path, false);
+    }
+
+    @SneakyThrows
+    public static void createFile(Path path, boolean recreate) {
+        if(recreate)
+            Files.deleteIfExists(path);
         if(!Files.exists(path)) {
             Path parent = path.getParent();
             if(parent != null && !Files.isDirectory(path))

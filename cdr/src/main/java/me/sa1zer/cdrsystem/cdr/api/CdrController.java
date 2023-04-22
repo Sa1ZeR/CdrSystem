@@ -16,11 +16,6 @@ public class CdrController {
 
     private final CDRService cdrService;
 
-    @GetMapping("getAll")
-    public ResponseEntity<?> getCdr() {
-        return ResponseEntity.ok(new CdrResponse(cdrService.getCDRData()));
-    }
-
     @PatchMapping("update")
     public ResponseEntity<?> update() {
         cdrService.updateCdr();
