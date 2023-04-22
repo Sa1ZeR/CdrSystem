@@ -52,6 +52,8 @@ public class BRTService {
     @Value("${settings.url.hsr-address}")
     private String hsrAddress;
 
+    @Value("${settings.broker.topic.cdr-gen-topic}")
+    private String cdrGenTopic;
     @Value("${settings.broker.topic.user-update-topic}")
     private String userUpdateTopic;
 
@@ -100,6 +102,9 @@ public class BRTService {
 
     private void initReportCache() {
         List<BillingData> data = billingDataService.findAll();
+        if(data.size() == 0) //if data == 0, cdr we must launch auto billing
+            kafkaSender.sendMessage(cdrGenTopic, "genCdr");
+
         data.forEach(d -> {
             TOTAL_COST_CACHE.put(d.getUser().getPhone(), d.getTotalCost());
             List<ReportDto> dtoList = d.getReportData().stream().map(reportDtoMapper::map).collect(Collectors.toList());
@@ -114,7 +119,8 @@ public class BRTService {
      * но после прочтения некоторых статей, оказалось, что не рекомендуется отправлять большие файлы таким способом.
      * Затем думал решить задачу нотификацией через кафку, но мне нужно получать ответ о завершении какого-либо действия,
      * а кафка это больше для асинхронного взаимодействия, поэтому в конечном счете я пришел к решению, которое будет по
-     * нужным ендпоинтам проводить определенные действия на микросервисах
+     * нужным ендпоинтам проводить определенные действия на микросервисах. При первом запуске о генерации файлов и тарификации,
+     * сервисы получают информацию при помощи нотификации (используется кафка)
      * @param request
      * @return users which updated by billing
      */
@@ -128,7 +134,7 @@ public class BRTService {
             clearOldData();
 
         //send to cdr service (we must create new cdr.txt) and then we must create cdr+
-        cdrPlusService.updateCDRPlus();
+        cdrPlusService.updateCDRPlus(true);
 
         //send request to brt, that cdr+ was created, and he must launch billing process
         ReportUpdateDataResponse response = httpService.sendPatchRequest(hsrAddress + "/billing", request, ReportUpdateDataResponse.class);
@@ -137,7 +143,7 @@ public class BRTService {
         return updateReportData(response);
     }
 
-    private BillingResponse updateReportData(ReportUpdateDataResponse request) {
+    public BillingResponse updateReportData(ReportUpdateDataResponse request) {
         List<BillingData> reportsToSave = new LinkedList<>();
         Set<String> updated = new HashSet<>();
 
@@ -150,7 +156,7 @@ public class BRTService {
 
             REPORT_DATA_CACHE.put(d.phone(), d.reports()); //update cache
 
-            //kafkaSender.sendMessage(userUpdateTopic, d.phone()); //update user cache
+            kafkaSender.sendMessage(userUpdateTopic, d.phone()); //update user cache
 
             reportsToSave.add(createBillingData(d.phone(), d.reports(), d.totalPrice()));
         });

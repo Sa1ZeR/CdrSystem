@@ -4,3 +4,7 @@ server:
 settings:
   url:
     brt-address: "http://localhost:3002/api/v1/brt/"
+  broker:
+    topic:
+      billing-launch-topic: "t.billing.launch"
+      update-report-data-topic: "t.report-data.update"

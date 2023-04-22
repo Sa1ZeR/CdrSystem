@@ -34,15 +34,19 @@ public class HRSService {
         calculators.forEach(c-> CALCULATORS.put(c.getType(), c));
     }
 
-    public ResponseEntity<?> billing(BillingRequest request) {
+    public ResponseEntity<?> handleBilling(BillingRequest request) {
         ActionType type = ActionType.getType(request.action());
         if(type != ActionType.RUN) return null;
 
+        return ResponseEntity.ok(launchBilling());
+    }
+
+    public ReportUpdateDataResponse launchBilling() {
         cdrPlusService.parseFile();
         Map<String, List<CdrPlusDto>> cdrPlusData = cdrPlusService.getCdrPlusData();
 
         //start calculation
-        return ResponseEntity.ok(calculate(cdrPlusData));
+        return calculate(cdrPlusData);
     }
 
     private ReportUpdateDataResponse calculate(Map<String, List<CdrPlusDto>> cdrPlusData) {

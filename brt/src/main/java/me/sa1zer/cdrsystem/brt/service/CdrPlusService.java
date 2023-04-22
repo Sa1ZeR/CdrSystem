@@ -34,8 +34,9 @@ public class CdrPlusService {
     @Value("${settings.url.cdr-address}")
     private String cdrAddress;
 
-    public void updateCDRPlus() {
-        httpService.sendPatchRequest(cdrAddress + "update", null, String.class);
+    public void updateCDRPlus(boolean updateCdr) {
+        if(updateCdr)
+            httpService.sendPatchRequest(cdrAddress + "update", null, String.class);
 
         //read cdr.txt
         cdrService.parseCDRFile();

@@ -18,6 +18,6 @@ public class HRSController {
 
     @PatchMapping("billing")
     public ResponseEntity<?> billing(@RequestBody BillingRequest request) {
-        return hrsService.billing(request);
+        return hrsService.handleBilling(request);
     }
 }

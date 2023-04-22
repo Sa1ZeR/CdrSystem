@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import me.sa1zer.cdrsystem.brt.service.BRTService;
 import me.sa1zer.cdrsystem.common.payload.request.BillingRequest;
 import me.sa1zer.cdrsystem.common.payload.response.PhoneReportResponse;
+import me.sa1zer.cdrsystem.common.payload.response.ReportUpdateDataResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,5 +25,10 @@ public class ReportController {
     @PatchMapping("billing")
     public ResponseEntity<?> billing(@Valid @RequestBody BillingRequest request) {
         return ResponseEntity.ok(brtService.billing(request));
+    }
+
+    @PatchMapping("updateBillingData")
+    public ResponseEntity<?> updateReportData(@RequestBody ReportUpdateDataResponse request) {
+        return ResponseEntity.ok(brtService.updateReportData(request));
     }
 }

@@ -18,7 +18,7 @@ public class CdrController {
 
     @PatchMapping("update")
     public ResponseEntity<?> update() {
-        cdrService.updateCdr();
+        cdrService.genCDRFile(true);
         return ResponseEntity.ok("Successfully updated");
     }
 }

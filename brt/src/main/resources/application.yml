@@ -7,6 +7,10 @@ settings:
   broker:
     topic:
       user-update-topic: "t.user.update"
+      cdr-gen-topic: "t.cdr.gen"
+      cdr-plus-gen-topic: "t.cdr-plus.gen"
+      billing-launch-topic: "t.billing.launch"
+      update-report-data-topic: "t.report-data.update"
 
 spring:
   kafka:

@@ -4,3 +4,7 @@ server:
 settings:
   url:
     brt-address: "http://localhost:3002/api/v1/brt/"
+  broker:
+    topic:
+      cdr-gen-topic: "t.cdr.gen"
+      cdr-plus-gen-topic: "t.cdr-plus.gen"

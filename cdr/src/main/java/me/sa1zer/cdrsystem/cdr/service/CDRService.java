@@ -44,15 +44,9 @@ public class CDRService {
     @Value("${settings.url.brt-address}")
     private String brtAddress;
 
-    @PostConstruct
-    public void init() {
-        genCDRFile(false);
-    }
-
     /**
      * if cdr file not exist, this method create test cdr data
      */
-    @SneakyThrows
     public void genCDRFile(boolean isNew) {
         log.info("CDR generation successfully started!");
         IOUtils.createFile(CDR_FILE, isNew);
@@ -88,10 +82,6 @@ public class CDRService {
 
         IOUtils.writeToFile(CDR_FILE, stringBuilder.toString());
         log.info("CDR generation successfully finished!");
-    }
-
-    public void updateCdr() {
-        genCDRFile(true);
     }
 
     //Для генерации тестовых данных нам приходится обращаться к другим сервисам для получения существующих пользователей
