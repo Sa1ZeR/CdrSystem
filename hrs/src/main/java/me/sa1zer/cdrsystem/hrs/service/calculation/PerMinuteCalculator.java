@@ -3,6 +3,7 @@ package me.sa1zer.cdrsystem.hrs.service.calculation;
 import me.sa1zer.cdrsystem.common.object.enums.TariffType;
 import me.sa1zer.cdrsystem.common.payload.dto.CdrPlusDto;
 import me.sa1zer.cdrsystem.common.payload.dto.ReportDto;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.temporal.ChronoUnit;
@@ -12,7 +13,8 @@ import java.util.List;
 @Service
 public class PerMinuteCalculator implements BaseCalculator {
 
-    private static final double PER_MINUTE_PRICE = 1.5;
+    @Value("${settings.calculation.per-minute}")
+    private double perMinutes;
 
     @Override
     public List<ReportDto> getReportData(List<CdrPlusDto> cdrPlusList) {
@@ -21,7 +23,7 @@ public class PerMinuteCalculator implements BaseCalculator {
         for(CdrPlusDto cdrPlusDto : cdrPlusList) {
             long duration = cdrPlusDto.startTime().until(cdrPlusDto.endTime(), ChronoUnit.SECONDS);
 
-            double price = Math.ceil(duration / 60D) * PER_MINUTE_PRICE;
+            double price = Math.ceil(duration / 60D) * perMinutes;
 
             reportList.add(new ReportDto(cdrPlusDto.phoneNumber(), cdrPlusDto.startTime(),
                     cdrPlusDto.endTime(), cdrPlusDto.callType(), cdrPlusDto.tariffType(), price, duration));

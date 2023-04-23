@@ -25,8 +25,6 @@ public class CdrPlusService {
 
     private final Path CDR_PLUS_FILE = Paths.get("cdr+.txt");
 
-    private static final Map<String, List<CdrPlusDto>> CDR_PLUS_CACHE = new HashMap<>();
-
     private final CdrService cdrService;
     private final UserService userService;
     private final HttpService httpService;
@@ -52,8 +50,6 @@ public class CdrPlusService {
 
     //create cdr + tariff data
     private void createCdrPlus(List<User> users, Map<String, List<CdrDto>> cdrData) {
-        CDR_PLUS_CACHE.clear();
-
         StringBuilder sb = new StringBuilder();
 
         for(User u : users) {
@@ -61,8 +57,7 @@ public class CdrPlusService {
 
             if(!ObjectUtils.isEmpty(cdrDtos)) {
                 for(CdrDto cdrDto : cdrDtos) {
-                    //we must create cdr+ dto for caching
-                    List<CdrPlusDto> cdrPlusData = CDR_PLUS_CACHE.getOrDefault(u.getPhone(), new ArrayList<>());
+                    //we must create cdr+ for writing
 
                     CdrPlusDto build = CdrPlusDto.builder()
                             .phoneNumber(u.getPhone())
@@ -72,11 +67,8 @@ public class CdrPlusService {
                             .tariffType(u.getTariff().getType())
                             .operator(u.getOperator().getName())
                             .build();
-                    cdrPlusData.add(build);
 
-                    sb.append(getCdrPlusLine(build)); //for writing
-
-                    CDR_PLUS_CACHE.put(u.getPhone(), cdrPlusData);
+                    sb.append(getCdrPlusLine(build)); //get line for writing
                 }
 
                 IOUtils.createFile(CDR_PLUS_FILE, true);

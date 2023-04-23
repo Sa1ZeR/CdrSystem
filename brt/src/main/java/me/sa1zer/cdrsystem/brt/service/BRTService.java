@@ -63,44 +63,6 @@ public class BRTService {
         initReportCache();
     }
 
-    public List<ReportDto> getReportByPhone(String phone) {
-        return REPORT_DATA_CACHE.get(phone);
-    }
-
-    private void updateTotalPrice(String phone, double totalPrice) {
-        TOTAL_COST_CACHE.put(phone, totalPrice);
-    }
-
-    public double getTotalCost(String phone) {
-        return TOTAL_COST_CACHE.getOrDefault(phone, 0D);
-    }
-
-    private void saveAllBillingData(List<BillingData> reportsToSave) {
-        billingDataService.saveAll(reportsToSave);
-    }
-
-    public List<UserDto> getAllUsers() {
-        List<User> users = userService.findAll();
-
-        return users.stream().map(userMapper::map).collect(Collectors.toList());
-    }
-
-    private void clearOldData() {
-        //clear old report data in db
-        deleteAllBillingData();
-        //clear cache
-        REPORT_DATA_CACHE.clear();
-    }
-
-    private void deleteAllBillingData() {
-        billingDataService.deleteAll();
-    }
-
-    /*  update user in cache*/
-    public void updateUserCache(String phoneNumber) {
-        userService.updateUserCache(phoneNumber);
-    }
-
     private void initReportCache() {
         List<BillingData> data = billingDataService.findAll();
         if(data.size() == 0) //if data == 0, cdr we must launch auto billing
@@ -111,6 +73,37 @@ public class BRTService {
             List<ReportDto> dtoList = d.getReportData().stream().map(reportDtoMapper::map).collect(Collectors.toList());
             REPORT_DATA_CACHE.put(d.getUser().getPhone(), dtoList);
         });
+    }
+
+    public List<ReportDto> getReportByPhone(String phone) {
+        return REPORT_DATA_CACHE.get(phone);
+    }
+
+    public List<UserDto> getAllUsers() {
+        List<User> users = userService.findAll();
+
+        return users.stream().map(userMapper::map)
+                .collect(Collectors.toList());
+    }
+
+    public double getTotalCost(String phone) {
+        return TOTAL_COST_CACHE.getOrDefault(phone, 0D);
+    }
+
+    private void updateTotalPrice(String phone, double totalPrice) {
+        TOTAL_COST_CACHE.put(phone, totalPrice);
+    }
+
+    private void clearOldData() {
+        //clear old report data in db
+        billingDataService.deleteAll();
+        //clear cache
+        REPORT_DATA_CACHE.clear();
+    }
+
+    /*  update user in cache*/
+    public void updateUserCache(String phoneNumber) {
+        userService.updateUserCache(phoneNumber);
     }
 
     /**
@@ -144,6 +137,7 @@ public class BRTService {
         return updateReportData(response);
     }
 
+    //update users after billing process
     @Transactional
     public BillingResponse updateReportData(ReportUpdateDataResponse request) {
         List<BillingData> reportsToSave = new LinkedList<>();
@@ -163,7 +157,7 @@ public class BRTService {
             reportsToSave.add(createBillingData(d.phone(), d.reports(), d.totalPrice()));
         });
 
-        saveAllBillingData(reportsToSave);
+        billingDataService.saveAll(reportsToSave);
 
         List<BillingDto> dtoList = userService.findAllInSet(updated).stream().map(billingMapper::map)
                 .collect(Collectors.toList());
@@ -171,10 +165,12 @@ public class BRTService {
         return new BillingResponse(dtoList);
     }
 
+    //create billing data for user (billing data - information about user's calls with costs)
     private BillingData createBillingData(String phone, List<ReportDto> reportList, double totalPrice) {
         User user = userService.getUserByPhone(phone);
 
-        Set<ReportData> reportDataList = reportList.stream().map(reportDataMapper::map).collect(Collectors.toSet());
+        Set<ReportData> reportDataList = reportList.stream().map(reportDataMapper::map)
+                .collect(Collectors.toSet());
 
         return BillingData.builder()
                 .user(user)

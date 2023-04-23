@@ -21,7 +21,7 @@ public class XCalculator implements BaseCalculator {
             long duration = cdrPlusDto.startTime().until(cdrPlusDto.endTime(), ChronoUnit.SECONDS);
 
             double price;
-            //будем считать, что на hrs могут прийти не только cdr с оператором ромашка
+            //будем считать, что на hrs могут прийти не только cdr с оператором ромашка(но на самом деле сюда приходят только пользователи оператора ромашка, код нужен только для того, чтоб показать возможность обрабатывать новый тариф по правилам)
             if(cdrPlusDto.operator().equalsIgnoreCase("Ромашка")) {
                 price = 0;
             } else {

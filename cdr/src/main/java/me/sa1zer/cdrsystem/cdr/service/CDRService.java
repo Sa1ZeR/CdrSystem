@@ -45,7 +45,7 @@ public class CDRService {
     private String brtAddress;
 
     /**
-     * if cdr file not exist, this method create test cdr data
+     * this method create test cdr data
      */
     public void genCDRFile(boolean isNew) {
         log.info("CDR generation successfully started!");
@@ -74,8 +74,7 @@ public class CDRService {
             stringBuilder.append(TimeUtils.LocalDateTimeToCdr(start));
             stringBuilder.append(", ");
             stringBuilder.append(TimeUtils.LocalDateTimeToCdr(end));
-//            stringBuilder.append(", ");
-//            stringBuilder.append(user.getTariff().getCode());
+
             if(i < CDR_LIMES - 1)
                 stringBuilder.append("\n");
         }

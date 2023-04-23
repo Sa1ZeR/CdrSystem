@@ -3,6 +3,7 @@ package me.sa1zer.cdrsystem.hrs.service.calculation;
 import me.sa1zer.cdrsystem.common.object.enums.TariffType;
 import me.sa1zer.cdrsystem.common.payload.dto.CdrPlusDto;
 import me.sa1zer.cdrsystem.common.payload.dto.ReportDto;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.temporal.ChronoUnit;
@@ -11,20 +12,23 @@ import java.util.List;
 
 @Service
 public class UnlimitedCalculator implements BaseCalculator {
-    private static final double AFTER_LIMIT_PRICE = 1.0D; //after 300 min
-    private static final double BEFORE_LIMIT_PRICE = 0.0D; //before 300 min
-    private static final int FREE_MINUTES = 300;
+    @Value("${settings.calculation.unlimited.after-limit-price}")
+    private double afterLimitPrice; //after 300 min
+    @Value("${settings.calculation.unlimited.before-limit-price}")
+    private double beforeLimitPrice = 0.0D; //before 300 min
+    @Value("${settings.calculation.unlimited.free-minutes}")
+    private int freeMinutesAmount = 300;
 
-    private static int TARIFF_PRICE = 100;
+    @Value("${settings.calculation.unlimited.free-minutes-price}")
+    private static int tariffPrice = 100;
 
     @Override
     public List<ReportDto> getReportData(List<CdrPlusDto> cdrPlusList) {
         List<ReportDto> reportList = new ArrayList<>();
 
-        long freeMinutes = FREE_MINUTES;
+        long freeMinutes = freeMinutesAmount;
         boolean isExpired = false;
 
-        long totalMins = 0;
         for(CdrPlusDto cdrPlusDto : cdrPlusList) {
             long duration = cdrPlusDto.startTime().until(cdrPlusDto.endTime(), ChronoUnit.SECONDS);
             double durationMin = Math.ceil(duration / 60D);
@@ -37,8 +41,8 @@ public class UnlimitedCalculator implements BaseCalculator {
             }
             freeMinutes-=durationMin;
 
-            double price = isExpired ? paidMinutes * AFTER_LIMIT_PRICE
-                    : BEFORE_LIMIT_PRICE;
+            double price = isExpired ? paidMinutes * afterLimitPrice
+                    : beforeLimitPrice;
 
             if(freeMinutes < 0)
                 freeMinutes = 0;
@@ -52,7 +56,7 @@ public class UnlimitedCalculator implements BaseCalculator {
 
     @Override
     public double calculate(List<ReportDto> reportData) {
-        return TARIFF_PRICE + reportData.stream().mapToDouble(ReportDto::cost).sum();
+        return tariffPrice + reportData.stream().mapToDouble(ReportDto::cost).sum();
     }
 
     @Override

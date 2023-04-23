@@ -4,6 +4,7 @@ import me.sa1zer.cdrsystem.common.object.enums.CallType;
 import me.sa1zer.cdrsystem.common.object.enums.TariffType;
 import me.sa1zer.cdrsystem.common.payload.dto.CdrPlusDto;
 import me.sa1zer.cdrsystem.common.payload.dto.ReportDto;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.temporal.ChronoUnit;
@@ -13,17 +14,21 @@ import java.util.List;
 @Service
 public class DefaultCalculator implements BaseCalculator {
 
-    private static final double INCOMING_PRICE = 0;
-    private static final double OUTGOING_PRICE = 0.5D; //first 100 min
-    private static final double PER_MINUTE_PRICE = 1.5D; //after 100 min
-    private static final int FREE_MINUTES = 100;
+    @Value("${settings.calculation.default.incoming-price}")
+    private double incomingPrice;
+
+    @Value("${settings.calculation.default.outgoing-price}")
+    private double outgoingPrice; //first 100 min
+    @Value("${settings.calculation.per-minute}")
+    private double perMinutePrice; //after 100 min
+    @Value("${settings.calculation.default.free-minutes}")
+    private long freeMinutesAmount;
 
     @Override
     public List<ReportDto> getReportData(List<CdrPlusDto> cdrPlusList) {
         List<ReportDto> reportList = new ArrayList<>();
 
-        long freeMinutes = FREE_MINUTES;
-        long totalMins = 0;
+        long freeMinutes = freeMinutesAmount;
         for(CdrPlusDto cdrPlusDto : cdrPlusList) {
             double price = 0;
 
@@ -37,12 +42,12 @@ public class DefaultCalculator implements BaseCalculator {
                     usePerMinutePrice = (long) (freeMinutes - durationMin);
 
                     if (freeMinutes > 0) {
-                        price = (usePerMinutePrice + durationMin) * OUTGOING_PRICE +
-                                Math.abs(usePerMinutePrice) * PER_MINUTE_PRICE;
+                        price = (usePerMinutePrice + durationMin) * outgoingPrice +
+                                Math.abs(usePerMinutePrice) * perMinutePrice;
                     } else
-                        price = Math.abs(usePerMinutePrice) * PER_MINUTE_PRICE;
-                } else price = durationMin * OUTGOING_PRICE;
-            } else price = INCOMING_PRICE;
+                        price = Math.abs(usePerMinutePrice) * perMinutePrice;
+                } else price = durationMin * outgoingPrice;
+            } else price = incomingPrice;
 
             freeMinutes-=durationMin;
 

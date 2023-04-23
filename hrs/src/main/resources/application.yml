@@ -8,3 +8,14 @@ settings:
     topic:
       billing-launch-topic: "t.billing.launch"
       update-report-data-topic: "t.report-data.update"
+  calculation:
+    per-minute: 1.5
+    default:
+      outgoing-price: 0.5
+      incoming-price: 0
+      free-minutes: 100
+    unlimited:
+      free-minutes: 300
+      free-minutes-price: 100
+      before-limit-price: 0
+      after-limit-price: 1
