@@ -87,9 +87,11 @@ public class AbonentService {
         //send request to brt because he's storing information about billing (report data)
         PhoneReportResponse responseByPhone = httpService.sendGetRequest(String.format(
                 brtUrl + "/report/getReportByPhone/%s", numberPhone), PhoneReportResponse.class).getBody();
-        List<ReportDto> reportByPhone = responseByPhone.reports()
-                .stream().sorted(Comparator.comparing(ReportDto::startTime)).toList();
+        List<ReportDto> reportByPhone = responseByPhone.reports();
 
+        if(reportByPhone != null)
+            reportByPhone =  reportByPhone.stream()
+                    .sorted(Comparator.comparing(ReportDto::startTime)).toList();
         //create response
         AbonentReportResponse reportResponse = AbonentReportResponse.builder()
                 .id(searched.getId())
