@@ -5,7 +5,7 @@ info:
   version: 1.0.0
 
 servers:
-  - url: http://localhost/api/v1
+  - url: http://localhost:3000/api/v1/
 tags:
   - name: auth
     description: В этом разделе находятся методы для авторизации пользователя.
