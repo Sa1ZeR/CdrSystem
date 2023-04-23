@@ -28,6 +28,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.security.Principal;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -86,7 +87,8 @@ public class AbonentService {
         //send request to brt because he's storing information about billing (report data)
         PhoneReportResponse responseByPhone = httpService.sendGetRequest(String.format(
                 brtUrl + "/report/getReportByPhone/%s", numberPhone), PhoneReportResponse.class).getBody();
-        List<ReportDto> reportByPhone = responseByPhone.reports();
+        List<ReportDto> reportByPhone = responseByPhone.reports()
+                .stream().sorted(Comparator.comparing(ReportDto::startTime)).toList();
 
         //create response
         AbonentReportResponse reportResponse = AbonentReportResponse.builder()
