@@ -71,6 +71,8 @@ public class AbonentService {
         response.setId(payment.getId());
         response.setMoney(payment.getAmount());
 
+        userService.save(searched);
+
         //send message to kafka for update user data
         kafkaSender.sendMessage(userUpdateTopic, searched.getPhone());
 
