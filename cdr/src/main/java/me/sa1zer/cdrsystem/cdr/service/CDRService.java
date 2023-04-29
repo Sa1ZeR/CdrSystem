@@ -35,7 +35,7 @@ import java.util.*;
 @RequiredArgsConstructor
 public class CDRService {
 
-    private static final Path CDR_FILE = Paths.get("cdr.txt");
+    private static final Path CDR_FILE = Paths.get("files/cdr.txt");
     private static final int CDR_LIMES = 5000;
     private static final Random random = new Random();
 
@@ -56,6 +56,8 @@ public class CDRService {
         ResponseEntity<UserDto[]> response = getUsers();
 
         List<UserDto> users = Arrays.asList(response.getBody());
+
+        System.out.println(users.size());
 
         LocalDateTime start;
         LocalDateTime end = LocalDateTime.of(2023, 1, 1, 9, 0, 0);

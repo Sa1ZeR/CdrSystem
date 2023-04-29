@@ -24,7 +24,7 @@ public class CdrService {
 
     private static final Map<String, List<CdrDto>> CDR_CACHE = new HashMap<>();
 
-    private final Path CDR_FILE = Paths.get("cdr.txt");
+    private final Path CDR_FILE = Paths.get("files/cdr.txt");
 
     public void parseCDRFile() {
         CDR_CACHE.clear();

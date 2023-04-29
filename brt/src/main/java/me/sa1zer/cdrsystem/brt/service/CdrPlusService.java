@@ -23,7 +23,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class CdrPlusService {
 
-    private final Path CDR_PLUS_FILE = Paths.get("cdr+.txt");
+    private final Path CDR_PLUS_FILE = Paths.get("files/cdr+.txt");
 
     private final CdrService cdrService;
     private final UserService userService;
