@@ -57,8 +57,6 @@ public class CDRService {
 
         List<UserDto> users = Arrays.asList(response.getBody());
 
-        System.out.println(users.size());
-
         LocalDateTime start;
         LocalDateTime end = LocalDateTime.of(2023, 1, 1, 9, 0, 0);
         for (int i = 0; i < CDR_LIMES; i++) {
@@ -86,12 +84,31 @@ public class CDRService {
     }
 
     //Для генерации тестовых данных нам приходится обращаться к другим сервисам для получения существующих пользователей
+    @SneakyThrows
     private ResponseEntity<UserDto[]>getUsers() {
-        ResponseEntity<UserDto[]> response = restTemplate.getForEntity(brtAddress + "user/getAll",
-                UserDto[].class);
-        if(!response.getStatusCode().is2xxSuccessful() || response.getBody() == null)
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Server Error");
+        int attempts = 5;
 
-        return response;
+        ResponseEntity<UserDto[]> response = null;
+        do {
+            attempts--;
+
+            try {
+                response = restTemplate.getForEntity(brtAddress + "user/getAll",
+                        UserDto[].class);
+            } catch (Exception ignored) {
+
+            }
+
+            if(response == null) {
+                log.warn("BRT service not available. Retry in 5 seconds...");
+                Thread.sleep(5000);
+            }
+
+        } while (attempts >= 0 && (response == null || !response.getStatusCode().is2xxSuccessful()));
+
+        if(response.getStatusCode().is2xxSuccessful())
+            return response;
+
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Server Error");
     }
 }

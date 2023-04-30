@@ -66,7 +66,12 @@ public class BRTService {
     private void initReportCache() {
         List<BillingData> data = billingDataService.findAll();
         if(data.size() == 0) //if data == 0, cdr we must launch auto billing
-            kafkaSender.sendMessage(cdrGenTopic, "genCdr");
+            new Timer().schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    kafkaSender.sendMessage(cdrGenTopic, "genCdr");
+                }
+            }, 10000L);
 
         data.forEach(d -> {
             TOTAL_COST_CACHE.put(d.getUser().getPhone(), d.getTotalCost());

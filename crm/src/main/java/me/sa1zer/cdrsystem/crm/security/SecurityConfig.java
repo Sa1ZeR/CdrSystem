@@ -34,7 +34,7 @@ public class SecurityConfig {
             .and()
                 .authenticationProvider(authenticationProvider())
                 .authorizeHttpRequests()
-                .requestMatchers("/api/v1/auth/**", "/error")
+                .requestMatchers("/api/v1/auth/**", "/api/v1/crm/**", "/error")
                 .permitAll()
                 .anyRequest()
                 .authenticated()

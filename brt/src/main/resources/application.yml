@@ -27,6 +27,6 @@ spring:
           batch_size: 50
     open-in-view: false
   datasource:
-    url: jdbc:postgresql://localhost/cdrsystem
+    url: jdbc:postgresql://localhost:5432/cdrsystem
     username: postgres
     password: 123456
