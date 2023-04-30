@@ -1,0 +1,105 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:15.2-alpine
+    container_name: 'cdrsystem-db'
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./pg_data:/var/lib/postgresql/data1/pgdata/ #save information from container to localstorage
+    user: postgres
+    environment:
+      POSTGRES_DB: cdrsystem
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123456
+      PGDATA: /var/lib/postgresql/data/pgdata
+    healthcheck:
+      test: [ "CMD", "pg_isready","-d","postgres","-U","postgres" ]
+      interval: 5s
+      timeout: 1s
+      retries: 5
+    network_mode: host
+    restart: always
+  zookeeper:
+    image: zookeeper
+    container_name: con_zkr
+    ports:
+      - "2181:2181"
+    network_mode: host
+  kafka:
+    image: bitnami/kafka:latest
+    container_name: kaf
+    ports:
+      - '9092:9092'
+    environment:
+      ALLOW_PLAINTEXT_LISTENER: yes
+      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
+    network_mode: host
+    depends_on:
+      - zookeeper
+  crmapp:
+    image: sa1zer/crm
+    container_name: 'crm'
+    healthcheck:
+      test: curl --fail http://localhost:3000/api/v1/crm/healthCheck || exit 1
+      interval: 10s
+      retries: 15
+      start_period: 5s
+      timeout: 5s
+    ports:
+      - "3000:3000"
+    network_mode: host
+    depends_on:
+      db:
+        condition: service_healthy
+  hrsapp:
+    image: sa1zer/hrs
+    container_name: 'hrs'
+    ports:
+      - "3001" #делаем так, что этот порт виден только внутри данной сети, не делаем его публичным для всех. В нашем случае порт должен быть виден всем только у CRM
+    volumes:
+      - ./commondir:/hrs/files
+    restart: always
+    network_mode: host
+    depends_on:
+      crmapp:
+        condition: service_healthy
+  cdrapp:
+    image: sa1zer/cdr
+    container_name: 'cdr'
+    healthcheck:
+      test: curl --fail http://localhost:3003/api/v1/cdr/healthCheck || exit 1
+      interval: 5s
+      retries: 15
+      start_period: 5s
+      timeout: 5s
+    ports:
+      - "3003" #аналогичная ситуация с сервисом hrs
+    volumes:
+      - ./commondir:/cdr/files
+    restart: on-failure
+    network_mode: host
+    depends_on:
+      crmapp:
+        condition: service_healthy
+  brtapp:
+    image: sa1zer/brt
+    container_name: brt
+    healthcheck:
+      test: curl --fail http://localhost:3002/api/v1/brt/healthCheck || exit 1
+      interval: 5s
+      retries: 15
+      start_period: 5s
+      timeout: 5s
+    ports:
+      - "3002" #аналогичная ситуация с сервисом hrs
+    volumes:
+      - ./commondir:/brt/files
+    restart: on-failure
+    network_mode: host
+    depends_on:
+      cdrapp:
+        condition: service_healthy
+
+
