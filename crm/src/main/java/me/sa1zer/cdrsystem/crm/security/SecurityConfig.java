@@ -32,12 +32,11 @@ public class SecurityConfig {
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             .and()
                 .authenticationProvider(authenticationProvider())
-                .authorizeHttpRequests()
-                .requestMatchers("/api/v1/auth/**", "/api/v1/crm/**", "/error")
+                .authorizeHttpRequests((requests) -> requests
+                        .requestMatchers("/api/v1/auth/**", "/api/v1/crm/**", "/error")
                 .permitAll()
                 .anyRequest()
-                .authenticated()
-            .and()
+                .authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

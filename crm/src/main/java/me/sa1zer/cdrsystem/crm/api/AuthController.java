@@ -2,8 +2,8 @@ package me.sa1zer.cdrsystem.crm.api;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import me.sa1zer.cdrsystem.crm.service.AuthenticationService;
 import me.sa1zer.cdrsystem.crm.payload.request.SignInRequest;
+import me.sa1zer.cdrsystem.crm.service.AuthenticationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
