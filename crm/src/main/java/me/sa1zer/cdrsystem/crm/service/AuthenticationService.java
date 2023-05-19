@@ -8,11 +8,13 @@ import me.sa1zer.cdrsystem.crm.payload.request.SignInRequest;
 import me.sa1zer.cdrsystem.crm.payload.response.SignInResponse;
 import me.sa1zer.cdrsystem.crm.security.jwt.JwtTokenProvider;
 import me.sa1zer.cdrsystem.crm.security.jwt.JwtUserFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -28,7 +30,8 @@ public class AuthenticationService {
     public ResponseEntity<?> signIn(SignInRequest request) {
         //var authenticate = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.numberPhone(), request.password()));
         User user = userService.findUserByPhone(request.numberPhone());
-        bCryptPasswordEncoder.matches(request.password(), user.getPassword());
+        if(!bCryptPasswordEncoder.matches(request.password(), user.getPassword()))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Incorrect password");
 
         String token = tokenProvider.generateToken(JwtUserFactory.createJwtUser(user));
 
