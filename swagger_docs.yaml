@@ -27,7 +27,7 @@ paths:
           application/json:
             schema:
               required:
-                - phoneNumber
+                - numberPhone
                 - password
               type: object
               properties:
