@@ -7,4 +7,4 @@ WORKDIR /crm/
 
 EXPOSE 3000
 
-CMD ["java", "-jar", "crm.jar"]
+CMD ["java", "-jar", "-Dlauncher.debug=true", "crm.jar"]
